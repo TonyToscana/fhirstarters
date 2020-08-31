@@ -76,7 +76,7 @@ public class Hints implements IResourceProvider {
 		// Loop through the patients looking for matches
 		for (Patient next : myPatients.values()) {
 			String familyName = next.getNameFirstRep().getFamily().toLowerCase();
-			if (familyName.contains(theParam.getValue().toLowerCase()) == false) {
+			if (!familyName.contains(theParam.getValue().toLowerCase())) {
 				continue;
 			}
 			retVal.add(next);
