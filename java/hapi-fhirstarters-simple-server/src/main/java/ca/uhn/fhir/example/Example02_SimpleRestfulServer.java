@@ -1,11 +1,11 @@
 package ca.uhn.fhir.example;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import ca.uhn.fhir.rest.server.interceptor.ResponseHighlighterInterceptor;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 
 @WebServlet("/*")
 public class Example02_SimpleRestfulServer extends RestfulServer {
@@ -16,7 +16,7 @@ public class Example02_SimpleRestfulServer extends RestfulServer {
 		setFhirContext(FhirContext.forR4());
 		
 		// Register resource providers
-		registerProvider(new Example01_PatientResourceProvider());
+		registerProvider(new PatientProvider());
 		
 		// Format the responses in nice HTML
 		registerInterceptor(new ResponseHighlighterInterceptor());
