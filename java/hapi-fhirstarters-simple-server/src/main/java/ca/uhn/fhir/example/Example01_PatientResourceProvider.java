@@ -2,10 +2,7 @@ package ca.uhn.fhir.example;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
-import ca.uhn.fhir.rest.annotation.Create;
-import ca.uhn.fhir.rest.annotation.IdParam;
-import ca.uhn.fhir.rest.annotation.Read;
-import ca.uhn.fhir.rest.annotation.ResourceParam;
+import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import org.hl7.fhir.instance.model.api.IBaseResource;
@@ -27,6 +24,9 @@ public abstract class Example01_PatientResourceProvider<T extends IBaseResource>
 
    private final String TYPE = "type";
    private final String RESOURCE_TYPE = "resourceType";
+   private final Client client = ClientBuilder.newClient();
+
+   private long nextId = -1;
 
    private Class<T> inferedClass;
 
@@ -46,12 +46,16 @@ public abstract class Example01_PatientResourceProvider<T extends IBaseResource>
       return inferedClass;
    }
 
+
+   //TODO in general, handle sucess and error cases
+
+   //TODO LogicalID vs Identifier
+
    /**
     * Simple implementation of the "read" method
     */
    @Read()
    public IBaseResource read(@IdParam IdType theId) {
-      Client client = ClientBuilder.newClient();
       final String URL = ORION_BASE + "/" + theId.getIdPart() + "?options=keyValues&type=" + theId.getResourceType();
       Response response = client.target(URL)
          .request(MediaType.APPLICATION_JSON_TYPE)
@@ -69,26 +73,40 @@ public abstract class Example01_PatientResourceProvider<T extends IBaseResource>
    }
 
    @Create()
-   public MethodOutcome create(@ResourceParam IBaseResource patient) {
-      patient.setId(getNextId(patient.fhirType()));
+   public MethodOutcome create(@ResourceParam IBaseResource resource) {
+      resource.setId(getNextId(resource.fhirType()));
 
       IParser parser = ctx.newJsonParser();
-      String resourceJsonString = parser.encodeResourceToString(patient);
+      String resourceJsonString = parser.encodeResourceToString(resource);
 
-      Client client = ClientBuilder.newClient();
       final String URL = ORION_BASE + "?options=keyValues";
       Response response = client.target(URL)
          .request(MediaType.APPLICATION_JSON_TYPE)
          .post(Entity.json(resourceToEntity(resourceJsonString)));
 
       MethodOutcome retVal = new MethodOutcome();
-
-      retVal.setId(patient.getIdElement());
+      retVal.setId(resource.getIdElement());
 
       return retVal;
    }
 
-   private long getEntityCount(String entityType) {
+
+   @Delete()
+   public MethodOutcome delete(@IdParam IdType theId) {
+      //TODO return on error and on success, and exceptions when not found
+      final String URL = ORION_BASE + "/" + theId.getIdPart() + "?options=keyValues&type=" + theId.getResourceType();
+      Response response = client.target(URL)
+         .request(MediaType.APPLICATION_JSON_TYPE)
+         .delete();
+
+      MethodOutcome retVal = new MethodOutcome();
+      retVal.setId(theId);
+
+      // otherwise, delete was successful
+      return retVal; // can also return MethodOutcome
+   }
+
+   private long retrieveEntityCount(String entityType) {
       Client client = ClientBuilder.newClient();
       String url = ORION_BASE + "?type=" + entityType + "&options=count&limit=1";
       Response response = client.target(url)
@@ -99,7 +117,14 @@ public abstract class Example01_PatientResourceProvider<T extends IBaseResource>
    }
 
    private String getNextId(String entityType) {
-      return Long.toString(getEntityCount(entityType) + 1);
+      // Cached so it doesn't have to ask the server every time, can be changed if desired
+      if(nextId == -1) {
+         this.nextId = retrieveEntityCount(entityType) + 1;
+      } else {
+         nextId++;
+      }
+
+      return Long.toString(nextId);
    }
 
    private String resourceToEntity(String resource) {
