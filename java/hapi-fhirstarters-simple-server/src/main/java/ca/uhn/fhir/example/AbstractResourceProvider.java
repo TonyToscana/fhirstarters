@@ -7,20 +7,14 @@ import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.IdType;
-import org.json.JSONObject;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.lang.reflect.ParameterizedType;
 
 
 public abstract class AbstractResourceProvider<T extends IBaseResource> implements IResourceProvider {
 
    protected final static IDAO dao = new OrionDAO();
-   protected FhirContext ctx = FhirContext.forR4();
+   protected final FhirContext ctx = FhirContext.forR4();
 
    protected long nextId = -1;
 
@@ -56,10 +50,6 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
 
       IParser parser = ctx.newJsonParser();
 
-      //Patient retVal = myPatients.get(theId.getIdPart());
-      //if (retVal == null) {
-      //   throw new ResourceNotFoundException(theId);
-      //}
       return parser.parseResource(getResourceType(), resourceJsonString);
    }
 
