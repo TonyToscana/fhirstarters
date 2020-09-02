@@ -17,7 +17,7 @@ import javax.ws.rs.core.Response;
 import java.lang.reflect.ParameterizedType;
 
 
-public abstract class Example01_PatientResourceProvider<T extends IBaseResource> implements IResourceProvider {
+public abstract class AbstractResourceProvider<T extends IBaseResource> implements IResourceProvider {
 
    protected final static IDAO dao = new OrionDAO();
    protected FhirContext ctx = FhirContext.forR4();
@@ -29,7 +29,7 @@ public abstract class Example01_PatientResourceProvider<T extends IBaseResource>
    /**
     * Constructor
     */
-   public Example01_PatientResourceProvider() {
+   public AbstractResourceProvider() {
 
    }
 
