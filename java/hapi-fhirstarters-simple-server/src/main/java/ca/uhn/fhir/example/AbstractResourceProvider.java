@@ -53,9 +53,20 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
       return parser.parseResource(getResourceType(), resourceJsonString);
    }
 
+   @Update
+   public MethodOutcome update(@IdParam IdType theId, @ResourceParam IBaseResource resource) {
+      IParser parser = ctx.newJsonParser();
+      String resourceJsonString = parser.encodeResourceToString(resource);
+      String resourceType = resource.fhirType();
+
+      dao.update(theId.getIdPart(), resourceJsonString, resourceType);
+
+      return new MethodOutcome();
+   }
+
    @Create()
    public MethodOutcome create(@ResourceParam IBaseResource resource) {
-      resource.setId(getNextId(resource.fhirType()));
+      resource.setId(dao.getNextId(resource.fhirType()));
 
       IParser parser = ctx.newJsonParser();
       String resourceJsonString = parser.encodeResourceToString(resource);
