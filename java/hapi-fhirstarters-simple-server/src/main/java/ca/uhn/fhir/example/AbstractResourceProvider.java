@@ -13,10 +13,8 @@ import java.lang.reflect.ParameterizedType;
 
 public abstract class AbstractResourceProvider<T extends IBaseResource> implements IResourceProvider {
 
-   protected final static IDAO dao = new OrionDAO();
+   protected final IDAO dao = new OrionDAO();
    protected final FhirContext ctx = FhirContext.forR4();
-
-   protected long nextId = -1;
 
    protected Class<T> inferedClass;
 
@@ -90,16 +88,5 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
 
       // otherwise, delete was successful
       return retVal; // can also return MethodOutcome
-   }
-
-   protected String getNextId(String entityType) {
-      // Cached so it doesn't have to ask the server every time, can be changed if desired
-      if(nextId == -1) {
-         this.nextId = dao.retrieveEntityCount(entityType) + 1;
-      } else {
-         nextId++;
-      }
-
-      return Long.toString(nextId);
    }
 }
