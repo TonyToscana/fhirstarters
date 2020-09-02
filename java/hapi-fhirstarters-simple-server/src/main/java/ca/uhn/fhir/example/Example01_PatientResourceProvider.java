@@ -19,16 +19,12 @@ import java.lang.reflect.ParameterizedType;
 
 public abstract class Example01_PatientResourceProvider<T extends IBaseResource> implements IResourceProvider {
 
-   private final String ORION_BASE = "http://localhost:1026/v2/entities";
-   private FhirContext ctx = FhirContext.forR4();
+   protected final static IDAO dao = new OrionDAO();
+   protected FhirContext ctx = FhirContext.forR4();
 
-   private final String TYPE = "type";
-   private final String RESOURCE_TYPE = "resourceType";
-   private final Client client = ClientBuilder.newClient();
+   protected long nextId = -1;
 
-   private long nextId = -1;
-
-   private Class<T> inferedClass;
+   protected Class<T> inferedClass;
 
    /**
     * Constructor
@@ -56,12 +52,7 @@ public abstract class Example01_PatientResourceProvider<T extends IBaseResource>
     */
    @Read()
    public IBaseResource read(@IdParam IdType theId) {
-      final String URL = ORION_BASE + "/" + theId.getIdPart() + "?options=keyValues&type=" + theId.getResourceType();
-      Response response = client.target(URL)
-         .request(MediaType.APPLICATION_JSON_TYPE)
-         .get();
-
-      String entityJsonString = response.readEntity(String.class);
+      String resourceJsonString = dao.read(theId.getIdPart(), theId.getResourceType());
 
       IParser parser = ctx.newJsonParser();
 
@@ -69,7 +60,7 @@ public abstract class Example01_PatientResourceProvider<T extends IBaseResource>
       //if (retVal == null) {
       //   throw new ResourceNotFoundException(theId);
       //}
-      return parser.parseResource(getResourceType(), entityToResource(entityJsonString));
+      return parser.parseResource(getResourceType(), resourceJsonString);
    }
 
    @Create()
@@ -79,10 +70,7 @@ public abstract class Example01_PatientResourceProvider<T extends IBaseResource>
       IParser parser = ctx.newJsonParser();
       String resourceJsonString = parser.encodeResourceToString(resource);
 
-      final String URL = ORION_BASE + "?options=keyValues";
-      Response response = client.target(URL)
-         .request(MediaType.APPLICATION_JSON_TYPE)
-         .post(Entity.json(resourceToEntity(resourceJsonString)));
+      dao.create(resourceJsonString);
 
       MethodOutcome retVal = new MethodOutcome();
       retVal.setId(resource.getIdElement());
@@ -94,10 +82,7 @@ public abstract class Example01_PatientResourceProvider<T extends IBaseResource>
    @Delete()
    public MethodOutcome delete(@IdParam IdType theId) {
       //TODO return on error and on success, and exceptions when not found
-      final String URL = ORION_BASE + "/" + theId.getIdPart() + "?options=keyValues&type=" + theId.getResourceType();
-      Response response = client.target(URL)
-         .request(MediaType.APPLICATION_JSON_TYPE)
-         .delete();
+      dao.delete(theId.getIdPart(), theId.getResourceType());
 
       MethodOutcome retVal = new MethodOutcome();
       retVal.setId(theId);
@@ -106,44 +91,14 @@ public abstract class Example01_PatientResourceProvider<T extends IBaseResource>
       return retVal; // can also return MethodOutcome
    }
 
-   private long retrieveEntityCount(String entityType) {
-      Client client = ClientBuilder.newClient();
-      String url = ORION_BASE + "?type=" + entityType + "&options=count&limit=1";
-      Response response = client.target(url)
-         .request(MediaType.APPLICATION_JSON_TYPE)
-         .get();
-
-      return Long.parseLong(response.getHeaderString("Fiware-Total-Count"));
-   }
-
-   private String getNextId(String entityType) {
+   protected String getNextId(String entityType) {
       // Cached so it doesn't have to ask the server every time, can be changed if desired
       if(nextId == -1) {
-         this.nextId = retrieveEntityCount(entityType) + 1;
+         this.nextId = dao.retrieveEntityCount(entityType) + 1;
       } else {
          nextId++;
       }
 
       return Long.toString(nextId);
-   }
-
-   private String resourceToEntity(String resource) {
-      JSONObject entityJsonArray = new JSONObject(resource);
-
-      entityJsonArray.putOpt(TYPE, entityJsonArray.opt(RESOURCE_TYPE));
-      if(entityJsonArray.has(TYPE))
-         entityJsonArray.remove(RESOURCE_TYPE);
-
-      return entityJsonArray.toString();
-   }
-
-   private String entityToResource(String entity) {
-      JSONObject entityJsonArray = new JSONObject(entity);
-
-      entityJsonArray.putOpt(RESOURCE_TYPE, entityJsonArray.opt(TYPE));
-      if(entityJsonArray.has(RESOURCE_TYPE))
-         entityJsonArray.remove(TYPE);
-
-      return entityJsonArray.toString();
    }
 }
