@@ -1,5 +1,7 @@
 package ca.uhn.fhir.example;
 
+import org.glassfish.jersey.client.HttpUrlConnectorProvider;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -17,7 +19,9 @@ public class OrionDAO implements IDAO {
    private final static String OPTION_COUNT ="count";
    private final static String PARAM_LIMIT = "limit";
    private final static String PARAM_TYPE = "type";
-   private final Client client = ClientBuilder.newClient();
+   private final static String PATH_ATTRS = "attrs";
+   // Property needed for the Client to accept PATCH operations https://stackoverflow.com/questions/55778145/how-to-use-patch-method-with-jersey-invocation-builder#comment98235093_55778145
+   private final Client client = ClientBuilder.newClient().property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true);
    private final static Mapper mapper = new Mapper();
    protected long nextId = -1;
 
@@ -34,7 +38,7 @@ public class OrionDAO implements IDAO {
          .queryParam(PARAM_TYPE, type);
 
       final String URL = builder.toString();
-      System.out.println(URL);
+
       Response response = client.target(URL)
          .request(MediaType.APPLICATION_JSON_TYPE)
          .get();
@@ -59,7 +63,42 @@ public class OrionDAO implements IDAO {
 
    @Override
    public void update(String id, String type, String resource) {
+      final String entity = mapper.resourceToEntity(resource);
+      UriBuilder builder = UriBuilder
+         .fromUri(ORION_ENTITIES_URI)
+         .path(id)
+         .path(PATH_ATTRS)
+         .queryParam(PARAM_TYPE, type)
+         .queryParam(PARAM_OPTIONS, OPTION_KEY_VALUES);
 
+      final String URL = builder.toString();
+      Entity payload = Entity.json(mapper.prepareEntityForUpdate(entity));
+
+      Response response = client.target(URL)
+         .request(MediaType.APPLICATION_JSON_TYPE)
+         .put(payload);
+
+      System.out.println(response.toString());
+   }
+
+   @Override
+   public void patch(String id, String type, String resource) {
+      final String entity = mapper.resourceToEntity(resource);
+      UriBuilder builder = UriBuilder
+         .fromUri(ORION_ENTITIES_URI)
+         .path(id)
+         .path(PATH_ATTRS)
+         .queryParam(PARAM_TYPE, type)
+         .queryParam(PARAM_OPTIONS, OPTION_KEY_VALUES);
+
+      final String URL = builder.toString();
+      Entity payload = Entity.json(mapper.prepareEntityForUpdate(entity));
+
+      //https://stackoverflow.com/questions/55778145/how-to-use-patch-method-with-jersey-invocation-builder
+      Response response = client.target(URL)
+         // Does not use JSON PATCH TYPE because Orion returns an error
+         .request(MediaType.APPLICATION_JSON_TYPE)
+         .method("PATCH", payload);
    }
 
    @Override

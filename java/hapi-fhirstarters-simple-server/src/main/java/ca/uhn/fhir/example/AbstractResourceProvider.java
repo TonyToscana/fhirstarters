@@ -4,9 +4,11 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.api.PatchTypeEnum;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.OperationOutcome;
 
 import java.lang.reflect.ParameterizedType;
 
@@ -57,9 +59,18 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
       String resourceJsonString = parser.encodeResourceToString(resource);
       String resourceType = resource.fhirType();
 
-      dao.update(theId.getIdPart(), resourceJsonString, resourceType);
+      dao.update(theId.getIdPart(), resourceType, resourceJsonString);
 
       return new MethodOutcome();
+   }
+
+   @Patch
+   public OperationOutcome patch(@IdParam IdType theId, PatchTypeEnum thePatchType, @ResourceParam String theBody) {
+      dao.patch(theId.getIdPart(), theId.getResourceType(), theBody);
+
+      OperationOutcome retVal = new OperationOutcome();
+      retVal.getText().setDivAsString("<div>OK</div>");
+      return retVal;
    }
 
    @Create()
@@ -76,6 +87,8 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
 
       return retVal;
    }
+
+   // TODO Search operation
 
 
    @Delete()
