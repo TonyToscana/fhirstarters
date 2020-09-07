@@ -1,43 +1,61 @@
 package ca.uhn.fhir.example;
 
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.IParser;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.Patient;
 import org.json.JSONObject;
+
+import javax.ws.rs.client.Entity;
 
 public class Mapper {
    private final static String TYPE = "type";
    private final static String RESOURCE_TYPE = "resourceType";
    private final static String ID = "id";
+   protected final FhirContext ctx = FhirContext.forR4();
 
-   public String resourceToEntity(String resource) {
-      JSONObject entityJsonArray = new JSONObject(resource);
+   public Entity resourceToEntity(IBaseResource resource) {
+      JSONObject resourceJson = resourceToJson(resource);
 
-      entityJsonArray.putOpt(TYPE, entityJsonArray.opt(RESOURCE_TYPE));
-      if(entityJsonArray.has(TYPE))
-         entityJsonArray.remove(RESOURCE_TYPE);
+      resourceJson.putOpt(TYPE, resourceJson.opt(RESOURCE_TYPE));
+      if(resourceJson.has(TYPE))
+         resourceJson.remove(RESOURCE_TYPE);
 
-      return entityJsonArray.toString();
+      return Entity.json(resourceJson.toString());
    }
 
-   public String entityToResource(String entity) {
-      JSONObject entityJsonArray = new JSONObject(entity);
+   public IBaseResource entityToResource(Entity entity, Class<? extends IBaseResource> resourceClass) {
+      JSONObject entityJson = entityToJson(entity);
 
-      entityJsonArray.putOpt(RESOURCE_TYPE, entityJsonArray.opt(TYPE));
-      if(entityJsonArray.has(RESOURCE_TYPE))
-         entityJsonArray.remove(TYPE);
+      entityJson.putOpt(RESOURCE_TYPE, entityJson.opt(TYPE));
+      if(entityJson.has(RESOURCE_TYPE))
+         entityJson.remove(TYPE);
 
-      return entityJsonArray.toString();
+      IParser parser = ctx.newJsonParser();
+
+      return parser.parseResource(resourceClass, entityJson.toString());
    }
 
-   public String prepareEntityForUpdate(String entity) {
-      JSONObject entityJsonArray = new JSONObject(entity);
+   public Entity prepareEntityForUpdate(Entity entity) {
+      JSONObject entityJson = entityToJson(entity);
 
-      if (entityJsonArray.has(TYPE)) {
-         entityJsonArray.remove(TYPE);
+      if (entityJson.has(TYPE)) {
+         entityJson.remove(TYPE);
       }
 
-      if (entityJsonArray.has(ID)) {
-         entityJsonArray.remove(ID);
+      if (entityJson.has(ID)) {
+         entityJson.remove(ID);
       }
 
-      return entityJsonArray.toString();
+      return Entity.json(entityJson.toString());
+   }
+
+   private JSONObject resourceToJson(IBaseResource resource) {
+      IParser parser = ctx.newJsonParser();
+      return new JSONObject(parser.encodeResourceToString(resource));
+   }
+
+   private JSONObject entityToJson(Entity entity) {
+      return new JSONObject(entity.getEntity().toString());
    }
 }

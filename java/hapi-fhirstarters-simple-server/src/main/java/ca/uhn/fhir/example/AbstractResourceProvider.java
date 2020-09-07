@@ -15,8 +15,7 @@ import java.lang.reflect.ParameterizedType;
 
 public abstract class AbstractResourceProvider<T extends IBaseResource> implements IResourceProvider {
 
-   protected final IDAO dao = new OrionDAO();
-   protected final FhirContext ctx = FhirContext.forR4();
+   protected final IDAO<T> dao = new OrionDAO<>((Class<T>) getResourceType());
 
    protected Class<T> inferedClass;
 
@@ -30,43 +29,38 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
    @Override
    public Class<? extends IBaseResource> getResourceType() {
       if(inferedClass == null){
-         inferedClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+         inferedClass = ClassUtils.getGenericClass(getClass());
       }
 
       return inferedClass;
    }
 
 
-   //TODO in general, handle sucess and error cases
-
-   //TODO LogicalID vs Identifier
+   // TODO in general, handle sucess and error cases
+   // TODO return on error and on success, and exceptions when not found http://hl7.org/implement/standards/fhir/http.html
+   // TODO LogicalID vs Identifier
+   // TODO Search operation
+   // TODO check which operations are not supported in which resources
+   // TODO accept all patch methods (JSON, XML and FHIRPath)
 
    /**
     * Simple implementation of the "read" method
     */
    @Read()
    public IBaseResource read(@IdParam IdType theId) {
-      String resourceJsonString = dao.read(theId.getIdPart(), theId.getResourceType());
-
-      IParser parser = ctx.newJsonParser();
-
-      return parser.parseResource(getResourceType(), resourceJsonString);
+      return dao.read(theId);
    }
 
    @Update
-   public MethodOutcome update(@IdParam IdType theId, @ResourceParam IBaseResource resource) {
-      IParser parser = ctx.newJsonParser();
-      String resourceJsonString = parser.encodeResourceToString(resource);
-      String resourceType = resource.fhirType();
-
-      dao.update(theId.getIdPart(), resourceType, resourceJsonString);
+   public MethodOutcome update(@ResourceParam IBaseResource resource) {
+      dao.update(resource);
 
       return new MethodOutcome();
    }
 
    @Patch
    public OperationOutcome patch(@IdParam IdType theId, PatchTypeEnum thePatchType, @ResourceParam String theBody) {
-      dao.patch(theId.getIdPart(), theId.getResourceType(), theBody);
+      dao.patch(theId, theBody);
 
       OperationOutcome retVal = new OperationOutcome();
       retVal.getText().setDivAsString("<div>OK</div>");
@@ -75,12 +69,7 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
 
    @Create()
    public MethodOutcome create(@ResourceParam IBaseResource resource) {
-      resource.setId(dao.getNextId(resource.fhirType()));
-
-      IParser parser = ctx.newJsonParser();
-      String resourceJsonString = parser.encodeResourceToString(resource);
-
-      dao.create(resourceJsonString);
+      dao.create(resource);
 
       MethodOutcome retVal = new MethodOutcome();
       retVal.setId(resource.getIdElement());
@@ -88,18 +77,13 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
       return retVal;
    }
 
-   // TODO Search operation
-
-
    @Delete()
    public MethodOutcome delete(@IdParam IdType theId) {
-      //TODO return on error and on success, and exceptions when not found
-      dao.delete(theId.getIdPart(), theId.getResourceType());
+      dao.delete(theId);
 
       MethodOutcome retVal = new MethodOutcome();
       retVal.setId(theId);
 
-      // otherwise, delete was successful
-      return retVal; // can also return MethodOutcome
+      return retVal;
    }
 }
