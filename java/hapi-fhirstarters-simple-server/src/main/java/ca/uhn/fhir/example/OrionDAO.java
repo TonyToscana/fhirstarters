@@ -93,6 +93,7 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
    }
 
    // TODO create new method for patch resource body
+   // TODO Review patch method reason in todo inside
    @Override
    public void patch(IdType theId, String patchBody) {
       Entity entity = Entity.json(patchBody);
