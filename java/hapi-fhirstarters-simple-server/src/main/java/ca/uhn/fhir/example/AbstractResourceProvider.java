@@ -30,12 +30,8 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
 
       return inferedClass;
    }
-
-<<<<<<< HEAD
+   
    // TODO logicalID vs Identifier
-=======
-   // TODO cvvicalID vs Identifier
->>>>>>> origin/master
    // TODO Implement Search operation and exceptions http://hl7.org/implement/standards/fhir/http.html#search
    // TODO check which operations are not supported in which resources (think of a method to throw exception notsupported)
 
