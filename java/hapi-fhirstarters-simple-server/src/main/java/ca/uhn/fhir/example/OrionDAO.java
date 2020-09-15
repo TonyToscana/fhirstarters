@@ -1,7 +1,5 @@
 package ca.uhn.fhir.example;
 
-import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.IdType;
 
@@ -11,6 +9,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.util.UUID;
 
 public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
    private final static String ORION_BASE_URI = "http://localhost:1026/v2";
@@ -29,7 +28,6 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
    // Property needed for the Client to accept PATCH operations https://stackoverflow.com/questions/55778145/how-to-use-patch-method-with-jersey-invocation-builder#comment98235093_55778145
    private final Client client = ClientBuilder.newClient();//.property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true);
    private final static Mapper mapper = new Mapper();
-   protected long nextId = -1;
 
    public OrionDAO(Class<T> resourceClass) {
       this.resourceClass = resourceClass;
@@ -134,17 +132,10 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
       return Long.parseLong(response.getHeaderString(TOTAL_COUNT_HEADER));
    }
 
-   // TODO change how to calculate ID
+   // Can change how to generate ids if desired
    @Override
    public String getNextId(String entityType) {
-      // Cached so it doesn't have to ask the server every time, can be changed if desired
-      if(nextId == -1) {
-         this.nextId = retrieveEntityCount(entityType) + 1;
-      } else {
-         nextId++;
-      }
-
-      return Long.toString(nextId);
+      return UUID.randomUUID().toString();
    }
 }
 
