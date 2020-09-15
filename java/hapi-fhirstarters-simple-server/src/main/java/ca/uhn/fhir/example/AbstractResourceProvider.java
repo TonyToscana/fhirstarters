@@ -40,7 +40,7 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
    // TODO return on error and on success, and exceptions when not found http://hl7.org/implement/standards/fhir/http.html
    // TODO LogicalID vs Identifier
    // TODO Search operation
-   // TODO check which operations are not supported in which resources
+   // TODO check which operations are not supported in which resources (think of a method to throw exception notsupported)
    // TODO accept all patch methods (JSON, XML and FHIRPath)
 
    /**

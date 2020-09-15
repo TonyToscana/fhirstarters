@@ -1,18 +1,16 @@
 package ca.uhn.fhir.example;
 
-import org.glassfish.jersey.client.HttpUrlConnectorProvider;
+import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.IdType;
-import org.json.JSONObject;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-import java.lang.reflect.Type;
 
 public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
    private final static String ORION_BASE_URI = "http://localhost:1026/v2";
@@ -29,7 +27,7 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
    private final Class<T> resourceClass;
 
    // Property needed for the Client to accept PATCH operations https://stackoverflow.com/questions/55778145/how-to-use-patch-method-with-jersey-invocation-builder#comment98235093_55778145
-   private final Client client = ClientBuilder.newClient().property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true);
+   private final Client client = ClientBuilder.newClient();//.property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true);
    private final static Mapper mapper = new Mapper();
    protected long nextId = -1;
 
@@ -53,8 +51,10 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
 
       Entity entity = Entity.json(response.readEntity(String.class));
 
-      return mapper.entityToResource(entity, resourceClass);
+      IBaseResource ret =  mapper.entityToResource(entity, resourceClass);
 
+
+      return ret;
    }
 
    @Override
@@ -92,29 +92,14 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
          .put(payload);
    }
 
-   // TODO create new method for patch resource body
-   // TODO Review patch method reason in todo inside
    @Override
    public void patch(IdType theId, String patchBody) {
-      Entity entity = Entity.json(patchBody);
-      //Entity entity = mapper.resourceToEntity(resource);
-
-      UriBuilder builder = UriBuilder
-         .fromUri(ORION_ENTITIES_URI)
-         .path(theId.getIdPart())
-         .path(PATH_ATTRS)
-         .queryParam(PARAM_TYPE, theId.getResourceType())
-         .queryParam(PARAM_OPTIONS, OPTION_KEY_VALUES);
-
-      String URL = builder.toString();
-      Entity payload = Entity.json(mapper.prepareEntityForUpdate(entity));
-
-      //https://stackoverflow.com/questions/55778145/how-to-use-patch-method-with-jersey-invocation-builder
-      Response response = client.target(URL)
-         // TODO test if the error orion gave was because the payload was not formatted to a correct json patch
-         // Does not use JSON PATCH TYPE because Orion returns an error
-         .request(MediaType.APPLICATION_JSON_TYPE)
-         .method("PATCH", payload);
+      // get resource with id theId
+      IBaseResource originalResource = read(theId);
+      // apply patchBody to the resource (change null with the patchBody as a patch object of the new library)
+      IBaseResource patchedResource = mapper.applyPatchToResource(patchBody, originalResource);
+      // pass resource as an argument to the update method
+      this.update(patchedResource);
    }
 
    @Override
@@ -149,6 +134,7 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
       return Long.parseLong(response.getHeaderString(TOTAL_COUNT_HEADER));
    }
 
+   // TODO change how to calculate ID
    @Override
    public String getNextId(String entityType) {
       // Cached so it doesn't have to ask the server every time, can be changed if desired
