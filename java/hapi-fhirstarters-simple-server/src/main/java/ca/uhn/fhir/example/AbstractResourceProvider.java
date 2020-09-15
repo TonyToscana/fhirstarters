@@ -5,7 +5,6 @@ import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.api.PatchTypeEnum;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import org.hl7.fhir.instance.model.api.IBaseResource;
-import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.OperationOutcome;
 
@@ -33,12 +32,10 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
    }
 
 
-   // TODO in general, handle sucess and error cases
-   // TODO return on error and on success, and exceptions when not found http://hl7.org/implement/standards/fhir/http.html
+   // TODO in general, handle sucess and error cases return on error and on success, and exceptions when not found http://hl7.org/implement/standards/fhir/http.html
    // TODO LogicalID vs Identifier
    // TODO Search operation
    // TODO check which operations are not supported in which resources (think of a method to throw exception notsupported)
-   // TODO accept all patch methods (JSON, XML and FHIRPath)
 
    /**
     * Simple implementation of the "read" method
@@ -57,6 +54,9 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
 
    @Patch
    public OperationOutcome patch(@IdParam IdType theId, PatchTypeEnum thePatchType, @ResourceParam String theBody) {
+      if (thePatchType != PatchTypeEnum.JSON_PATCH) {
+         throw new UnsupportedOperationException("Only JSON Patch is supported");
+      }
       dao.patch(theId, theBody);
 
       OperationOutcome retVal = new OperationOutcome();
