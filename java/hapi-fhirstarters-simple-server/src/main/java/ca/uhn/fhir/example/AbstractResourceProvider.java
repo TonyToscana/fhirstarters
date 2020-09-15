@@ -34,8 +34,7 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
    // TODO cvvicalID vs Identifier
    // TODO Implement Search operation and exceptions
    // TODO check which operations are not supported in which resources (think of a method to throw exception notsupported)
-
-   // TODO read exceptions
+   
    // TODO update exceptions
    // TODO patch exceptions
    // TODO create exceptions
