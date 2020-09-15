@@ -1,5 +1,6 @@
 package ca.uhn.fhir.example;
 
+import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.IdType;
 
@@ -46,6 +47,10 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
       Response response = client.target(URL)
          .request(MediaType.APPLICATION_JSON_TYPE)
          .get();
+
+      if(response.getStatusInfo() == Response.Status.NOT_FOUND) {
+         throw new ResourceNotFoundException("Resource not found ;)");
+      }
 
       Entity entity = Entity.json(response.readEntity(String.class));
 

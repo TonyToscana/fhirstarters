@@ -31,11 +31,15 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
       return inferedClass;
    }
 
-
-   // TODO in general, handle sucess and error cases return on error and on success, and exceptions when not found http://hl7.org/implement/standards/fhir/http.html
-   // TODO LogicalID vs Identifier
-   // TODO Search operation
+   // TODO cvvicalID vs Identifier
+   // TODO Implement Search operation and exceptions
    // TODO check which operations are not supported in which resources (think of a method to throw exception notsupported)
+
+   // TODO read exceptions
+   // TODO update exceptions
+   // TODO patch exceptions
+   // TODO create exceptions
+   // TODO delete exceptions
 
    /**
     * Simple implementation of the "read" method
@@ -61,6 +65,7 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
 
       OperationOutcome retVal = new OperationOutcome();
       retVal.getText().setDivAsString("<div>OK</div>");
+
       return retVal;
    }
 
