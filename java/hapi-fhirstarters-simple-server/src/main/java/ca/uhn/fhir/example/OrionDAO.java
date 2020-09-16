@@ -2,6 +2,7 @@ package ca.uhn.fhir.example;
 
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.IdType;
 
 import javax.ws.rs.client.Client;
@@ -35,7 +36,7 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
    }
 
    @Override
-   public IBaseResource read(IdType theId) {
+   public IBaseResource read(IIdType theId) {
       UriBuilder builder = UriBuilder
          .fromUri(ORION_ENTITIES_URI)
          .path(theId.getIdPart())
@@ -62,7 +63,8 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
 
    @Override
    public void create(IBaseResource resource) {
-      resource.setId(getNextId(resource.fhirType()));
+      if(resource.getIdElement().getIdPart() == null)
+         resource.setId(getNextId(resource.fhirType()));
 
       final Entity payload = mapper.resourceToEntity(resource);
       UriBuilder builder = UriBuilder
@@ -96,7 +98,7 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
    }
 
    @Override
-   public void patch(IdType theId, String patchBody) {
+   public void patch(IIdType theId, String patchBody) {
       // get resource with id theId
       IBaseResource originalResource = read(theId);
       // apply patchBody to the resource (change null with the patchBody as a patch object of the new library)
@@ -106,7 +108,7 @@ public class OrionDAO<T extends IBaseResource> implements IDAO<T> {
    }
 
    @Override
-   public void delete(IdType theId) {
+   public void delete(IIdType theId) {
       UriBuilder builder = UriBuilder
          .fromUri(ORION_ENTITIES_URI)
          .path(theId.getIdPart())

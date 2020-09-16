@@ -4,6 +4,7 @@ import ca.uhn.fhir.rest.annotation.*;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.api.PatchTypeEnum;
 import ca.uhn.fhir.rest.server.IResourceProvider;
+import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.OperationOutcome;
@@ -35,7 +36,6 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
    // TODO Implement Search operation and exceptions http://hl7.org/implement/standards/fhir/http.html#search
    // TODO check which operations are not supported in which resources (think of a method to throw exception notsupported)
 
-   // TODO update exceptions http://hl7.org/implement/standards/fhir/http.html#update
    // TODO patch exceptions http://hl7.org/implement/standards/fhir/http.html#patch
    // TODO create exceptions http://hl7.org/implement/standards/fhir/http.html#create
    // TODO delete exceptions http://hl7.org/implement/standards/fhir/http.html#delete
@@ -48,9 +48,22 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
       return dao.read(theId);
    }
 
+
+   // The ability to use update as create is optional (in that case it should return a 405 Method Not Allowed)
    @Update
    public MethodOutcome update(@ResourceParam IBaseResource resource) {
-      dao.update(resource);
+      MethodOutcome retVal = new MethodOutcome();
+
+      try {
+         dao.read(resource.getIdElement());
+         dao.update(resource);
+      } catch (ResourceNotFoundException e) {
+         dao.create(resource);
+         retVal.setCreated(true);
+      }
+
+      retVal.setId(resource.getIdElement());
+      retVal.setResource(resource);
 
       return new MethodOutcome();
    }
