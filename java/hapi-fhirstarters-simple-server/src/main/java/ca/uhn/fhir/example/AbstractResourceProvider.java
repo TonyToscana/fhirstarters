@@ -32,12 +32,15 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
       return inferedClass;
    }
 
-   // TODO logicalID vs Identifier
+   // TODO logicalID vs Identifier, which should be really identifying the resource?
    // TODO Implement Search operation and exceptions http://hl7.org/implement/standards/fhir/http.html#search
-   // TODO check which operations are not supported in which resources (think of a method to throw exception notsupported)
+   // TODO check which operations are not supported in which resources (think of a method to throw exception notsupported: https://hapifhir.io/hapi-fhir/apidocs/hapi-fhir-base/ca/uhn/fhir/rest/server/exceptions/package-summary.html)
 
-   // TODO patch exceptions http://hl7.org/implement/standards/fhir/http.html#patch
+   // TODO finish handling ORION responses at OrionDAO level
+   // OrionDAO, Parsing, FHIR exceptions
+
    // TODO create exceptions http://hl7.org/implement/standards/fhir/http.html#create
+   // TODO patch exceptions http://hl7.org/implement/standards/fhir/http.html#patch
    // TODO delete exceptions http://hl7.org/implement/standards/fhir/http.html#delete
 
    /**
@@ -50,6 +53,7 @@ public abstract class AbstractResourceProvider<T extends IBaseResource> implemen
 
 
    // The ability to use update as create is optional (in that case it should return a 405 Method Not Allowed)
+   // TODO change to dao.updateOrCreate and create a basic update for cleaner code
    @Update
    public MethodOutcome update(@ResourceParam IBaseResource resource) {
       MethodOutcome retVal = new MethodOutcome();
